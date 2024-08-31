@@ -11,11 +11,14 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Button, 
+  Input
 } from "@chakra-ui/react";
 import { useSheet } from "@/hooks/useSheet";
 import ColorPicker from "./Grid/ColorPicker";
 import { debounce } from "@/utils";
 import { config } from "@/constants";
+import { ChartType } from "chart.js";
 
 const activeClassName = "bg-light-blue rounded";
 const btnClassName = "flex justify-center items-center w-[24px] h-[24px]";
@@ -35,11 +38,12 @@ const DEFAULT_ACTIVE_STYLE: IActiveStyle = {
 const ToolBar = () => {
   const [activeStyle, setActiveStyle] =
     useState<Partial<IActiveStyle>>(DEFAULT_ACTIVE_STYLE);
-
+  
   const {
     quill,
     scale,
     editCell,
+    csvData,
     selectedCell,
     activeHighLightIndex,
     highLightCells,
@@ -49,6 +53,8 @@ const ToolBar = () => {
     handleSearchNext,
     handleSearchPrevious,
     handleScaleChange,
+    handleImportCSV,
+    handleExportCSV,
   } = useSheet();
 
   let { background } = getCellById(selectedCell?.cellId) || {};
@@ -472,6 +478,30 @@ const ToolBar = () => {
               </span>
             </Fragment>
           )}
+
+          {/* export  button */}
+          
+          
+          <Button onClick = {handleExportCSV} size='xs' colorScheme='teal' variant='outline' className="ml-2">
+            Export to CSV
+          </Button> 
+          
+
+          {/* Import CSV File Input */}
+          <Input
+            type="file"
+            accept=".csv"
+            onChange={handleImportCSV}
+            className="ml-2"
+            style={{ display: 'none' }}
+            id="csv-file-input"
+          />
+          <label htmlFor="csv-file-input">
+            <Button  size='xs' colorScheme='teal' variant='outline' as="span" className="ml-2">
+              Import CSV File
+            </Button>
+          </label>
+          
         </div>
       </div>
     </Fragment>
