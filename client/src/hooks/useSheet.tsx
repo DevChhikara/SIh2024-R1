@@ -37,6 +37,7 @@ import {
   deleteRow,
   insertRow,
 } from "@/services/Cell";
+import { socket } from "./socket";
 
 type ISheetContext = {
   quill: Quill | null;
@@ -180,6 +181,8 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     return column || null;
   }, [grid.columns, selectedColumnId]);
 
+
+
   useEffect(() => {
     registerQuillFormat();
   }, []);
@@ -188,7 +191,10 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     getSheetDetails();
   }, [sheetId]);
 
+
+
   useEffect(() => {
+    console.log("gekjegrjk");
     getGridDetails();
   }, [gridId]);
 
@@ -201,12 +207,18 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     focusTextEditor();
   }, [quill]);
 
+  
+
   const handleEditCellChange = () => {
     if (!editCell) return;
     let cell = getCellById(editCell.cellId);
+   
     const quill = new Quill("#editor");
     quill.setContents(cell?.content as any);
-    let handler = debounce(handleEditorChange.bind(undefined, quill), 500);
+    let handler = debounce(() => {
+      handleEditorChange.bind(undefined, quill);
+      emitCellUpdate(quill.getContents());
+    }, 500);
     quill.on("text-change", handler);
     setQuill(quill);
     return () => {
@@ -215,6 +227,15 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     };
   };
 
+
+  const emitCellUpdate = (newContent: any) => {
+    if (!editCell) return;
+    const cellUpdate = {
+      cellId: editCell.cellId,
+      content: newContent,
+    };
+    socket.emit('updateCellContent', cellUpdate);
+  };
   const focusTextEditor = () => {
     const selection = getSelection();
     if (!quill || !selection) return;
