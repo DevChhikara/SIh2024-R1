@@ -57,6 +57,7 @@ const SheetList = () => {
   };
 
   const handleCreateDocument = async () => {
+    console.log('create');
     try {
       let {
         data: {
