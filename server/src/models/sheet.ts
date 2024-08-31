@@ -11,7 +11,7 @@ const SheetSchema = new Schema(
       type: [Types.ObjectId],
     },
     createdBy: {
-      type: Types.ObjectId,
+      type: [Types.ObjectId],
       ref: "User",
       required: true,
     },

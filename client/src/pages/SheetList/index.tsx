@@ -11,6 +11,17 @@ import Pagination from "@/components/Pagination";
 import Avatar from "@/components/Avatar";
 import { createSheet, getSheetList, removeSheetById } from "@/services/Sheet";
 import { getStaticUrl, debounce } from "@/utils";
+import axios from 'axios';
+import { SHEET_URL } from "../../services/config";
+
+// const URL = "${SHEET_URL}/${sheetId}/addUsertoSheet";
+// const EMAIL_VERIFICATION_URL = "https://your-api-endpoint.com/verify-email";
+
+interface ISheetData {
+  id: string;
+  title: string;
+  content: string;
+}
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -104,6 +115,34 @@ const SheetList = () => {
     },
     500
   );
+  const addUserToSheet = (sheetId: string, email: string) => {
+    console.log("hello");
+    console.log(email);
+    return axios.post<{ message: string; data: ISheetData }>(
+      `${SHEET_URL}/${sheetId}/addUsertoSheet`,
+      { email }
+    );
+  };
+
+  const handleShareSheet = async (id: string, email: string) => {
+    try {
+      const sheetId = id;
+      const emailVerificationResponse = await axios.post<{ message: string }>(
+        `${SHEET_URL}/${sheetId}/addUsertoSheet`,
+        { email }
+      );
+      // if (emailVerificationResponse.data.message === "Email verified") {
+      //   const sheetResponse = await addUserToSheet(id, email);
+
+      //   console.log("Sheet Data:", sheetResponse.data.data);
+      // } else {
+      //   console.error("Email verification failed");
+      // }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
+  };
+
 
   return (
     <Fragment>
@@ -219,6 +258,20 @@ const SheetList = () => {
                                   >
                                     <i className="bx-link-external text-xl"></i>
                                     <span>Open in new tab</span>
+                                  </MenuItem>
+                                  <MenuItem
+                                    className="flex gap-3 items-center"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      const email = prompt("Please enter your email address:");
+                                      console.log(email);
+                                      if (email) {
+                                        handleShareSheet(_id, email);
+                                      }
+                                    }}
+                                  >
+                                    <i className="bx-share text-xl"></i>
+                                    <span>Share</span>
                                   </MenuItem>
                                 </MenuList>
                               </Portal>
