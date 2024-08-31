@@ -4,9 +4,9 @@ import verifyToken from "../middlewares/verifyToken";
 
 const router = Router();
 
+router.post("/:sheetId/addUsertoSheet", SheetController.addUserToSheet);
 router.use(verifyToken);
 router.post("/create", SheetController.createSheet);
-router.post("/:sheetId/addUsertoSheet", SheetController.addUserToSheet);
 router.get("/:sheetId/detail", SheetController.getSheetById);
 router.get("/list", SheetController.getSheetList);
 router.put("/:sheetId/update", SheetController.updateSheetById);
