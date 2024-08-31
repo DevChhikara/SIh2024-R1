@@ -140,7 +140,6 @@ const removeSheetById = asyncHandler(async (req, res) => {
 const addUserToSheet = asyncHandler(async (req, res) => {
   const { sheetId } = req.params;
   const { email } = req.body;
-  console.log("hello");
 
   const user = await User.findOne({ email });
 
