@@ -14,11 +14,11 @@
       {
   "headers": [
     {
-      "source": "/api/(.*)",  // Matches all routes under /api
+      "source": "/api/(.*)", 
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://s-ih2024-r1-8uq7.vercel.app" // Replace with your frontend origin
+          "value": "https://s-ih2024-r1-8uq7.vercel.app" 
         },
         {
           "key": "Access-Control-Allow-Methods",
