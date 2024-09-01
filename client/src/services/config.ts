@@ -1,7 +1,7 @@
 const BASE_URL =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:8000"
-    : "https://s-ih2024-r1.vercel.app";
+    ? "https://sih2024-r1-3.onrender.com"
+    : "https://sih2024-r1-3.onrender.com";
 
 export const USER_URL = `${BASE_URL}/api/user`;
 export const SHEET_URL = `${BASE_URL}/api/sheet`;
