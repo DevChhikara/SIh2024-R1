@@ -14,9 +14,6 @@ import { getStaticUrl, debounce } from "@/utils";
 import axios from 'axios';
 import { SHEET_URL } from "../../services/config";
 
-// const URL = "${SHEET_URL}/${sheetId}/addUsertoSheet";
-// const EMAIL_VERIFICATION_URL = "https://your-api-endpoint.com/verify-email";
-
 interface ISheetData {
   id: string;
   title: string;
@@ -30,6 +27,9 @@ const SheetList = () => {
   const [sheets, setSheets] = useState<ISheetList>([]);
   const [pageMeta, setPageMeta] = useState({} as any);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentSheetId, setCurrentSheetId] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -56,6 +56,7 @@ const SheetList = () => {
     }
   };
   const handleCreateDocument = async () => {
+    console.log("create");
     try {
       let {
         data: {
@@ -96,34 +97,32 @@ const SheetList = () => {
     },
     500
   );
-  const addUserToSheet = (sheetId: string, email: string) => {
-    console.log("hello");
-    console.log(email);
-    return axios.post<{ message: string; data: ISheetData }>(
-      `${SHEET_URL}/${sheetId}/addUsertoSheet`,
-      { email }
-    );
-  };
 
-  const handleShareSheet = async (id: string, email: string) => {
+  const addUserToSheet = async (sheetId: string, email: string) => {
     try {
-      const sheetId = id;
-      const emailVerificationResponse = await axios.post<{ message: string }>(
+      const response = await axios.post<{ message: string; data: ISheetData }>(
         `${SHEET_URL}/${sheetId}/addUsertoSheet`,
         { email }
       );
-      // if (emailVerificationResponse.data.message === "Email verified") {
-      //   const sheetResponse = await addUserToSheet(id, email);
-
-      //   console.log("Sheet Data:", sheetResponse.data.data);
-      // } else {
-      //   console.error("Email verification failed");
-      // }
+      toast.success(response.data.message);
     } catch (error) {
-      console.error("An error occurred:", error);
+      toast.error("An error occurred while sharing the sheet.");
     }
   };
 
+  const handleShareSheet = async () => {
+    if (email) {
+      try {
+        await addUserToSheet(currentSheetId, email);
+        setEmail('');
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error("An error occurred:", error);
+      }
+    } else {
+      toast.error("Please enter an email address.");
+    }
+  };
 
   return (
     <Fragment>
@@ -131,7 +130,7 @@ const SheetList = () => {
         <div className="flex items-center gap-2">
           <img className="w-12 h-12" src={getStaticUrl("/logo.png")} />
           <span className="font-medium text-[#5f6368] text-xl">
-            Google Sheets
+            Sheets
           </span>
         </div>
         <div className="relative flex items-center justify-center">
@@ -145,6 +144,7 @@ const SheetList = () => {
         </div>
         {user && <Avatar user={user} logout={logout} />}
       </div>
+
       {isLoading ? (
         <div>
           <span>Loading...</span>
@@ -174,7 +174,7 @@ const SheetList = () => {
             <tbody>
               {sheets.length === 0 ? (
                 <tr>
-                  <td className="py-6 text-center" colSpan={5}>
+                  <td className="py-6 text-center" colSpan={4}>
                     No Records Found
                   </td>
                 </tr>
@@ -196,7 +196,7 @@ const SheetList = () => {
                           </div>
                         </td>
                         <td className="text-center p-3">
-                          <span className=" text-gray-500 text-sm">
+                          <span className="text-gray-500 text-sm">
                             {dayjs
                               .tz(new Date(createdAt), "Asia/Kolkata")
                               .format("MMM D, YYYY")}
@@ -244,11 +244,8 @@ const SheetList = () => {
                                     className="flex gap-3 items-center"
                                     onClick={(event) => {
                                       event.stopPropagation();
-                                      const email = prompt("Please enter your email address:");
-                                      console.log(email);
-                                      if (email) {
-                                        handleShareSheet(_id, email);
-                                      }
+                                      setCurrentSheetId(_id);
+                                      setIsModalOpen(true);
                                     }}
                                   >
                                     <i className="bx-share text-xl"></i>
@@ -271,12 +268,43 @@ const SheetList = () => {
           )}
         </Fragment>
       )}
+
       <button
         className="fixed flex items-center justify-center shadow-[0px_2px_10px_rgba(0,0,0,0.3),0px_0px_1px_rgba(0,0,0,0.1),inset_0px_1px_0px_rgba(255,255,255,0.25),inset_0px_-1px_0px_rgba(0,0,0,0.15)] w-14 h-14 bg-white rounded-[50%] border-[none] right-[25px] bottom-[30px]"
         onClick={handleCreateDocument}
       >
         <img className="w-6 h-6" src={getStaticUrl("/plus.svg")} />
       </button>
+
+      {/* Share Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">Share Sheet</h3>
+            <input
+              type="email"
+              className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+              placeholder="Enter email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                onClick={handleShareSheet}
+              >
+                Share
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Fragment>
   );
 };
