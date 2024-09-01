@@ -11,7 +11,7 @@
         "preview": "vite preview",
         "predeploy": "npm run build",
         "deploy": "gh-pages -d dist",
-        "start": "serve -s build"
+        "start": "serve -s dist"
     },
     "dependencies": {
         "@chakra-ui/react": "^2.8.2",
