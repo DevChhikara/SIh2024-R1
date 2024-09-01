@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "./src/middlewares/cors";
+import cors from "cors";
 import connect from "./src/database/config";
 import router from "./src/routes";
 import { createServer } from "http";
@@ -11,8 +11,14 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 const app = express();
 
-app
-  .use(cors)
+const corsOptions = {
+  origin: 'https://sih2024-r1-5.onrender.com',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, 
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions))
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
   .use(router);
