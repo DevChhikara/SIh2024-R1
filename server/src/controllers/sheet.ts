@@ -2,8 +2,11 @@ import Sheet from "../models/sheet";
 import Grid from "../models/grid";
 import Cell from "../models/cell";
 import Row from "../models/row";
+import User from "../models/user";
 import Column from "../models/column";
 import { asyncHandler, CustomError } from "../utils";
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 const createSheet = asyncHandler(async (req, res) => {
   let sheet = await Sheet.create({
@@ -33,10 +36,11 @@ const getSheetById = asyncHandler(async (req, res) => {
   });
 
   if (!sheet) {
-    throw new CustomError({ message: "Sheet not exist", status: 400 });
+    throw new CustomError({ message: "Sheet does not exist", status: 400 });
   }
 
-  if (sheet.createdBy.toString() !== req.user._id) {
+
+  if (!sheet.createdBy.includes(ObjectId(req.user._id))) {
     throw new CustomError({
       message: "You don't have access to view and edit the sheet",
       status: 400,
@@ -57,6 +61,7 @@ const getSheetById = asyncHandler(async (req, res) => {
   });
 });
 
+
 const updateSheetById = asyncHandler(async (req, res) => {
   let { sheetId } = req.params;
 
@@ -71,12 +76,14 @@ const updateSheetById = asyncHandler(async (req, res) => {
   res.status(200).send({ message: "Sheet has been updated successfully" });
 });
 
+
 const getSheetList = asyncHandler(async (req, res) => {
   let { page = 1, search = "", limit = 20 } = req.query;
   let { _id: userId } = req.user;
 
+
   const matchQuery = {
-    createdBy: userId,
+    createdBy: { $in: [userId] },
     title: { $regex: search, $options: "i" },
   };
 
@@ -92,7 +99,7 @@ const getSheetList = asyncHandler(async (req, res) => {
     }
   );
 
-  let count = (await Sheet.find(matchQuery)).length;
+  let count = await Sheet.countDocuments(matchQuery);
 
   let pageMeta = {
     totalPages: Math.ceil(count / +limit),
@@ -102,6 +109,7 @@ const getSheetList = asyncHandler(async (req, res) => {
 
   res.status(200).send({ data: { sheets, pageMeta }, message: "Success" });
 });
+
 
 const removeSheetById = asyncHandler(async (req, res) => {
   let { sheetId } = req.params;
@@ -127,12 +135,49 @@ const removeSheetById = asyncHandler(async (req, res) => {
   res.status(200).send({ message: "Sheet has been deleted successfully" });
 });
 
+
+
+const addUserToSheet = asyncHandler(async (req, res) => {
+  const { sheetId } = req.params;
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(400).send({
+      message: "User not found",
+    });
+  }
+
+  const sheet = await Sheet.findById(sheetId);
+
+  if (!sheet) {
+    return res.status(400).send({
+      message: "Sheet not found",
+    });
+  }
+  if (sheet.createdBy.includes(ObjectId(user._id))) {
+    return res.status(400).send({
+      message: "User already has access to this sheet",
+    });
+  }
+  await Sheet.findByIdAndUpdate(sheetId, {
+    $push: { createdBy: user._id },
+  });
+
+  res.status(200).send({
+    message: "User has been successfully added to the sheet",
+  });
+});
+
+
 const SheetController = {
   createSheet,
   getSheetById,
   getSheetList,
   updateSheetById,
   removeSheetById,
+  addUserToSheet,
 };
 
 export default SheetController;
