@@ -21,4 +21,5 @@ const cors: CORS = (req, res, next) => {
   return !origin ? next() : res.status(403).end();
 };
 
+
 export default cors;
