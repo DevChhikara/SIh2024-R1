@@ -11,9 +11,32 @@
       "src": "/(.*)",
       "dest": "./index.ts",
       "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*"
-      }
+      {
+  "headers": [
+    {
+      "source": "/api/(.*)",  // Matches all routes under /api
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://s-ih2024-r1-8uq7.vercel.app" // Replace with your frontend origin
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type, sec-ch-ua, sec-ch-ua-mobile, sec-ch-ua-platform"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}
+
     }
     ]
 }
