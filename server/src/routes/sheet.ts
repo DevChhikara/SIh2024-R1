@@ -1,9 +1,7 @@
 import { Router } from "express";
 import SheetController from "../controllers/sheet";
 import verifyToken from "../middlewares/verifyToken";
-
 const router = Router();
-
 router.use(verifyToken);
 router.post("/create", SheetController.createSheet);
 router.post("/:sheetId/addUsertoSheet", SheetController.addUserToSheet);

@@ -26,31 +26,20 @@ interface ISheetData {
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(relativeTime);
-
 const SheetList = () => {
   const [sheets, setSheets] = useState<ISheetList>([]);
-
   const [pageMeta, setPageMeta] = useState({} as any);
-
   const [isLoading, setIsLoading] = useState(true);
-
   const location = useLocation();
-
   const navigate = useNavigate();
-
   const { user, logout } = useAuth();
-
   let containerRef = useRef<HTMLTableElement>(null);
-
   const searchParams = new URLSearchParams(location.search);
-
   let search = searchParams.get("search") || "";
   let page = searchParams.get("page") || 1;
-
   useEffect(() => {
     getSheetDetails();
   }, [search, page]);
-
   const getSheetDetails = async () => {
     try {
       let {
@@ -66,9 +55,7 @@ const SheetList = () => {
       if (isLoading) setIsLoading(false);
     }
   };
-
   const handleCreateDocument = async () => {
-    console.log('create');
     try {
       let {
         data: {
@@ -80,10 +67,8 @@ const SheetList = () => {
       toast.error(error?.message);
     }
   };
-
   const handleDeleteDocument = async (sheetId: string) => {
     if (!window.confirm("Are you sure to delete this form?")) return;
-
     try {
       await removeSheetById(sheetId);
       getSheetDetails();
@@ -91,25 +76,20 @@ const SheetList = () => {
       toast.error(error?.message);
     }
   };
-
   const handlePageChange = (page: number) => {
     if (!containerRef.current) return;
-
     navigate({
       search:
         page !== 0
           ? `?page=${page + 1}${search ? `&search=${search}` : ""}`
           : "",
     });
-
     containerRef.current.scrollIntoView({ behavior: "smooth" });
   };
-
   const navigateToSheet = (sheetId: string, newTab: boolean = false) => {
     let path = `/sheet/${sheetId}`;
     newTab ? window.open(`#${path}`) : navigate(path);
   };
-
   const handleChange = debounce<ChangeEvent<HTMLInputElement>>(
     ({ target: { value } }) => {
       navigate({ search: value ? `?search=${value}` : "" });

@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on('updateCellContent', (data) => {
+    console.log(data.content);
     socket.broadcast.emit('cellContentUpdated', data);
   });
 });
