@@ -22,9 +22,13 @@ const io = new Server(server);
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
-
   socket.on("disconnect", () => {
     console.log("User disconnected");
+  });
+
+  socket.on('updateCellContent', (data) => {
+    console.log(data.content);
+    socket.broadcast.emit('cellContentUpdated', data);
   });
 });
 

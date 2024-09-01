@@ -9,11 +9,9 @@ import {
   Dispatch,
   SetStateAction,
   useLayoutEffect,
-  ChangeEvent,
 } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Quill from "quill";
-import Papa from 'papaparse';
 import { toast } from "react-toastify";
 import { config } from "@/constants";
 import { debounce } from "@/utils";
@@ -39,12 +37,12 @@ import {
   deleteRow,
   insertRow,
 } from "@/services/Cell";
+import { socket } from "./socket";
 
 type ISheetContext = {
   quill: Quill | null;
   grid: IGrid;
   scale: number;
-  csvData:string[][];
   sheetDetail: ISheetDetail | null;
   editCell: ICell | null;
   syncState: number;
@@ -85,9 +83,6 @@ type ISheetContext = {
     gridId: string,
     data: Partial<ISheetGrid>
   ) => void;
-
-  handleImportCSV: (event: React.ChangeEvent<HTMLInputElement>) => any[][];
-  handleExportCSV: () => void;
   setGrid: Dispatch<SetStateAction<IGrid>>;
   setScale: Dispatch<SetStateAction<number>>;
   setContextMenuRect: Dispatch<SetStateAction<Pick<IRect, "x" | "y"> | null>>;
@@ -102,13 +97,10 @@ type ISheetProviderProps = {
   children: ReactNode;
 };
 
-
 const SheetContext = createContext({} as ISheetContext);
 
 export const SheetProvider = ({ children }: ISheetProviderProps) => {
   const [quill, setQuill] = useState<Quill | null>(null);
- 
-  const [csvData] = useState<string[][]>([]);
 
   const [syncState, setSyncState] = useState(0);
 
@@ -164,7 +156,7 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
   const navigate = useNavigate();
 
   const searchParams = new URLSearchParams(location.search);
-  
+
   const gridId = searchParams.get("gridId");
 
   const selectedCell = useMemo(() => {
@@ -209,36 +201,28 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     if (!quill) return;
     focusTextEditor();
   }, [quill]);
- 
-  
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    
-    if (file) {
-      Papa.parse(file, {
-        complete: (result) => {
-          const parsedData = result.data as string[][];
-          console.log('parsinggg');
-          console.log(parsedData);
-          csvData.push(...parsedData);
-          console.log('pushing ');
-          console.log(csvData);
-          try {
-            loadCSVData(csvData);
-            console.log('handleEditorChange executed successfully');
-          } catch (error) {
-            console.error('Error executing handleEditorChange:', error);
-          }
-        },
-        header: false,
-        
-      });
-    }
-  
- 
-    return csvData;
-  };
 
+  useEffect(() => {
+    const handleCellContentUpdate =  async (data: any) => {
+
+      const text=data.content.text;
+      const content = data.content.content;
+      const cellid=data.cellId;
+
+      let cellData = getCellById(cellid);
+      if (cellData) {
+        await updateCellById(cellData._id, { text, content });
+        cellData.text = text;
+        cellData.content = content;
+        forceUpdate();
+      }
+    };
+  
+    socket.on('cellContentUpdated', handleCellContentUpdate);
+    return () => {
+      socket.off('cellContentUpdated', handleCellContentUpdate);
+    };
+  }, [editCell?.cellId]);
 
 
   const handleEditCellChange = () => {
@@ -246,7 +230,19 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     let cell = getCellById(editCell.cellId);
     const quill = new Quill("#editor");
     quill.setContents(cell?.content as any);
-    let handler = debounce(handleEditorChange.bind(undefined, quill), 500);
+    
+    let handler = debounce( () => { 
+      handleEditorChange(quill);
+      let text = quill.getText();
+      const content: any[] = [];
+      quill.getContents().eachLine(({ ops }) => {
+        content.push(...ops, { insert: "\n" });
+      });
+
+      console.log(text);
+      console.log(content);
+      emitChanges({text,content});
+    }, 500);
     quill.on("text-change", handler);
     setQuill(quill);
     return () => {
@@ -254,6 +250,18 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
       setQuill(null);
     };
   };
+
+  const emitChanges = (newContent : any) => {
+    if (!editCell) return;
+
+  const cellUpdate = {
+    cellId: editCell.cellId,
+    content: newContent,
+  };
+
+  socket.emit('updateCellContent',cellUpdate);
+    
+  }
 
   const focusTextEditor = () => {
     const selection = getSelection();
@@ -372,86 +380,21 @@ export const SheetProvider = ({ children }: ISheetProviderProps) => {
     setHighLightCells([]);
     setGrid({ cells: [], columns: [], rows: [] });
   };
-  const handleExportCSV = async () => {
-    console.log('hello fxn');
-    const gridRows = 26; 
-    const gridColumns = 100; 
-    
-    const gridData: string[][] = [];
-    
-    for (let row = 0; row < gridRows; row++) {
-        const rowData: string[] = [];
 
-        for (let col = 0; col < gridColumns; col++) {
-            const cellData = getCellByPosition(row, col);
-            const cellText = (cellData?.text || "").replace(/\n/g, " ").trim();
+  const handleEditorChange = async (quill: Quill) => {
+    if (!editCell || !gridId) return;
+
+    try {
+      let text = quill.getText();
+      const content: any[] = [];
       
-            console.log(`Row: ${row}, Col: ${col}, Data: "${cellText}"`);
 
-            rowData.push(cellText); 
-        }
+      quill.getContents().eachLine(({ ops }) => {
+        content.push(...ops, { insert: "\n" });
+      });
 
-        gridData.push(rowData);
-        
-    }
-    
-    console.log(gridData);
-    let result = convertArrayToCSV(gridData);
-    console.log(result);
-    
-
-    exportCSV(result,'data.csv')
-
-};
-const convertArrayToCSV = (array: string[][]): string => {
-  return array.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
-};
-
-const exportCSV = (csvContent: string, fileName: string) => {
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-const getCellByPosition = (row:number, col:number): any => {
-    
-    return getCellById(`${col},${row}`);
-};
-
-  const loadCSVData = async (csvData: string[][]) => {
-    console.log('inloadCSVData');
-    if (!gridId || !csvData) return;
-    console.log('after if statement');
-    try {
-      console.log('in try block');
-      console.log(csvData.length);
-      for (let row = 0; row < csvData.length; row++) {
-        for (let col = 0; col < csvData[row].length; col++) {
-          let text = csvData[row][col];
-          const content: any[] = [{ insert: text }];
-          console.log(row,col);
-          await updateCellCsv(text, content, row+1, col+1);  // Call handleEditorChange for each cell
-        }
-      }
-      forceUpdate();
-    } catch (error: any) {
-      toast.error(`Error processing CSV data: ${error?.message}`);
-    }
-  };
-  
-
-  const updateCellCsv= async (text: string, content: any[], rowId: number, columnId: number) => {
-    if (!gridId) return;
-  
-    try {
-      let cellData = getCellById(`${columnId},${rowId}`);
-  
+      let cellData = getCellById(editCell.cellId);
+      console.log(cellData);
       if (cellData) {
         await updateCellById(cellData._id, { text, content });
         cellData.text = text;
@@ -459,18 +402,18 @@ const getCellByPosition = (row:number, col:number): any => {
         forceUpdate();
       } else {
         let body: any = {
-          rowId,
-          columnId,
+          rowId: editCell.rowId,
+          columnId: editCell.columnId,
           text,
           content,
         };
-  
+
         let {
           data: {
             data: { cellId },
           },
         } = await createCell(gridId, body);
-  
+
         body._id = cellId;
         setCellById(body);
         forceUpdate();
@@ -478,47 +421,6 @@ const getCellByPosition = (row:number, col:number): any => {
     } catch (error: any) {
       toast.error(error?.message);
     }
-  };
-  
-  const handleEditorChange = async (quill: Quill) => {
-    
-    if (!editCell || !gridId) return;
-  
-      try {
-        let text = quill.getText();
-        const content: any[] = [];
-        let cellData = getCellById(editCell.cellId);
-  
-        quill.getContents().eachLine(({ ops }) => {
-          content.push(...ops, { insert: "\n" });
-        });
-  
-        if (cellData) {
-          await updateCellById(cellData._id, { text, content });
-          cellData.text = text;
-          cellData.content = content;
-          forceUpdate();
-        } else {
-          let body: any = {
-            rowId: editCell.rowId,
-            columnId: editCell.columnId,
-            text,
-            content,
-          };
-  
-          let {
-            data: {
-              data: { cellId },
-            },
-          } = await createCell(gridId, body);
-  
-          body._id = cellId;
-          setCellById(body);
-          forceUpdate();
-        }
-      } catch (error: any) {
-        toast.error(error?.message);
-      }
   };
 
   const handleFormatCell: ISheetContext["handleFormatCell"] = async (
@@ -560,15 +462,26 @@ const getCellByPosition = (row:number, col:number): any => {
     }
   };
 
-  const getCellById: ISheetContext["getCellById"] = (cellId) => {
-    // cellId - `columnId,rowId` (or) _id generated in db
-    if (typeof cellId !== "string") return;
-    if (cellDetails.current.has(cellId)) return cellDetails.current.get(cellId);
-    let id = cellIds.current.get(cellId);
-    if (!id) return;
-    return cellDetails.current.get(id);
-  };
 
+  const getCellById: ISheetContext["getCellById"] = (cellId) => {
+    console.log(`Fetching cell data for cellId: ${cellId}`);
+    
+    if (typeof cellId !== "string") {
+        return;
+    }
+
+    if (cellDetails.current.has(cellId)) {
+        return cellDetails.current.get(cellId);
+    }
+
+    let id = cellIds.current.get(cellId);
+    if (!id) {
+        return;
+    }
+
+    const cellData = cellDetails.current.get(id);
+    return cellData;
+};
   const setCellById = (cell: ICellDetail) => {
     let cellId = `${cell.columnId},${cell.rowId}`;
     cellIds.current.set(cellId, cell._id);
@@ -1055,7 +968,6 @@ const getCellByPosition = (row:number, col:number): any => {
         copiedCell,
         activeHighLightIndex,
         highLightCells,
-        csvData,
         setGrid,
         setScale,
         getCellById,
@@ -1088,9 +1000,6 @@ const getCellByPosition = (row:number, col:number): any => {
         setSelectedRowId,
         setContextMenuRect,
         handleAutoFillCell,
-        handleImportCSV,
-        handleExportCSV
-
       }}
     >
       {children}
