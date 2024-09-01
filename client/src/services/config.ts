@@ -1,7 +1,4 @@
-const BASE_URL =
-  process.env.NODE_ENV === "local"
-    ? "http://localhost:8000"
-    : "https://s-ih2024-r1.vercel.app";
+const BASE_URL = "https://s-ih2024-r1.vercel.app";
 
 export const USER_URL = `${BASE_URL}/api/user`;
 export const SHEET_URL = `${BASE_URL}/api/sheet`;
