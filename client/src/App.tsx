@@ -8,6 +8,7 @@ import { socket } from "./hooks/socket";
 
 import "./stylesapp.css";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 
 export const App = () => {
@@ -20,6 +21,7 @@ export const App = () => {
       socket.disconnect();
     };
   }, []);
+  axios.defaults.withCredentials = true;
 
   return (
     <HashRouter>
