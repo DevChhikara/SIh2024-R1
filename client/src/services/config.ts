@@ -1,5 +1,5 @@
 const BASE_URL =
-  process.env.NODE_ENV === "development"
+  process.env.NODE_ENV === "local"
     ? "http://localhost:8000"
     : "https://s-ih2024-r1.vercel.app";
 
