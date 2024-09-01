@@ -57,7 +57,7 @@ const SheetList = () => {
   };
 
   const handleCreateDocument = async () => {
-    console.log('create');
+    console.log("create");
     try {
       let {
         data: {
@@ -111,9 +111,7 @@ const SheetList = () => {
       <div className="sticky h-[var(--header-height)] grid grid-cols-[250px_1fr_75px] place-content-center bg-[white] z-[999] p-[15px] border-b-[#dadce0] border-b border-solid left-0 top-0">
         <div className="flex items-center gap-2">
           <img className="w-12 h-12" src={getStaticUrl("/logo.png")} />
-          <span className="font-medium text-[#5f6368] text-xl">
-            Google Sheets
-          </span>
+          <span className="font-medium text-[#5f6368] text-xl">Sheets</span>
         </div>
         <div className="relative flex items-center justify-center">
           <input
