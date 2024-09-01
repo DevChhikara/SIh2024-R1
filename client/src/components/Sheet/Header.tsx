@@ -5,6 +5,7 @@ import { useSheet } from "@/hooks/useSheet";
 import Avatar from "@/components/Avatar";
 import useTitle from "@/hooks/useTitle";
 import { debounce, getStaticUrl } from "@/utils";
+import "@/assets/css/index.css";
 
 const Header = () => {
   const { user, logout } = useAuth();

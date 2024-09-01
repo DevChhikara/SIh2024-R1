@@ -1,14 +1,22 @@
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.container {
     background-image: url('../assets/bg_.jpg');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center;
-
-
-
+    background-size: contain;
+    background-position: center;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

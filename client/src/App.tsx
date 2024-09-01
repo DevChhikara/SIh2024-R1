@@ -6,8 +6,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ChakraProvider } from "@chakra-ui/react";
 import { socket } from "./hooks/socket";
 
+import "./stylesapp.css";
 import "react-toastify/dist/ReactToastify.css";
-import "@/assets/css/index.css";
+
 
 export const App = () => {
   useEffect(() => {

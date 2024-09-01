@@ -13,6 +13,7 @@ import { createSheet, getSheetList, removeSheetById } from "@/services/Sheet";
 import { getStaticUrl, debounce } from "@/utils";
 import axios from 'axios';
 import { SHEET_URL } from "../../services/config";
+import "@/assets/css/index.css";
 
 interface ISheetData {
   id: string;
