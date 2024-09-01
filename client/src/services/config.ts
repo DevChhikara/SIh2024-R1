@@ -1,7 +1,7 @@
 const BASE_URL =
   process.env.NODE_ENV === "development"
     ? "http://localhost:8000"
-    : "https://google-sheets-flax.vercel.app";
+    : "https://s-ih2024-r1.vercel.app";
 
 export const USER_URL = `${BASE_URL}/api/user`;
 export const SHEET_URL = `${BASE_URL}/api/sheet`;
