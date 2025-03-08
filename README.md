@@ -21,3 +21,5 @@ Also make sure you have both the client and server running before opening the fr
 For any query regarding setup and working contanct: Dm any of the team members.<br />
 
 
+LIve deployment Broken ❌ will fix later 👋
+
